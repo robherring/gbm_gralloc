@@ -47,7 +47,6 @@ struct gralloc_drm_handle_t {
 	int format;
 	int usage;
 
-	int name;   /* the name of the bo */
 	int stride; /* the stride in bytes */
 
 	int data_owner; /* owner of data (for validation) */
