@@ -202,7 +202,7 @@ static int gbm_mod_close_gpu0(struct hw_device_t *dev)
 	struct alloc_device_t *alloc = (struct alloc_device_t *) dev;
 
 	gbm_dev_destroy(dmod->gbm);
-	delete alloc;
+	free(alloc);
 
 	return 0;
 }
@@ -264,7 +264,7 @@ static int gbm_mod_open_gpu0(struct gbm_module_t *dmod, hw_device_t **dev)
 	if (err)
 		return err;
 
-	alloc = new alloc_device_t;
+	alloc = malloc(1, sizeof(struct alloc_device_t));
 	if (!alloc)
 		return -EINVAL;
 

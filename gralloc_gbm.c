@@ -119,7 +119,7 @@ static struct gralloc_gbm_bo_t *gbm_import(struct gbm_device *gbm,
 	if (handle->prime_fd < 0)
 		return NULL;
 
-	buf = new struct gralloc_gbm_bo_t();
+	buf = malloc(1, sizeof(struct gralloc_gbm_bo_t));
 	if (!buf) {
 		ALOGE("failed to allocate pipe buffer");
 		return NULL;
@@ -133,7 +133,7 @@ static struct gralloc_gbm_bo_t *gbm_import(struct gbm_device *gbm,
 
 	buf->bo = gbm_bo_import(gbm, GBM_BO_IMPORT_FD, &data, 0);
 	if (!buf->bo) {
-		delete buf;
+		free(buf);
 		return NULL;
 	}
 	return buf;
@@ -147,7 +147,7 @@ static struct gralloc_gbm_bo_t *gbm_alloc(struct gbm_device *gbm,
 	int usage = get_pipe_bind(handle->usage);
 	int width, height;
 
-	buf = new struct gralloc_gbm_bo_t();
+	buf = malloc(1, sizeof(struct gralloc_gbm_bo_t));
 	if (!buf) {
 		ALOGE("failed to allocate pipe buffer");
 		return NULL;
@@ -168,7 +168,7 @@ static struct gralloc_gbm_bo_t *gbm_alloc(struct gbm_device *gbm,
 	if (!buf->bo) {
 		ALOGE("failed to create BO, size=%dx%d, fmt=%d, usage=%x",
 		      handle->width, handle->height, handle->format, usage);
-		delete buf;
+		free(buf);
 		return NULL;
 	}
 
@@ -186,7 +186,7 @@ static void gbm_free(struct gralloc_gbm_bo_t *bo)
 	handle->prime_fd = -1;
 
 	gbm_bo_destroy(bo->bo);
-	delete bo;
+	free(bo);
 }
 
 static int gbm_map(struct gralloc_gbm_bo_t *bo, int x, int y, int w, int h,
@@ -328,7 +328,7 @@ static struct gralloc_gbm_handle_t *create_bo_handle(int width,
 {
 	struct gralloc_gbm_handle_t *handle;
 
-	handle = new gralloc_gbm_handle_t();
+	handle = malloc(1, sizeof(struct gralloc_gbm_handle_t));
 	if (!handle)
 		return NULL;
 
@@ -361,7 +361,7 @@ struct gralloc_gbm_bo_t *gralloc_gbm_bo_create(struct gbm_device *gbm,
 
 	bo = gbm_alloc(gbm, handle);
 	if (!bo) {
-		delete handle;
+		free(handle);
 		return NULL;
 	}
 
@@ -393,7 +393,7 @@ static void gralloc_gbm_bo_destroy(struct gralloc_gbm_bo_t *bo)
 		handle->data = 0;
 	}
 	else {
-		delete handle;
+		free(handle);
 	}
 }
 

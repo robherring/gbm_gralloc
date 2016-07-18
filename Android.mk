@@ -23,8 +23,8 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-	gralloc_gbm.cpp \
-	gralloc.cpp
+	gralloc_gbm.c \
+	gralloc.c
 
 LOCAL_SHARED_LIBRARIES := \
 	libgbm \
