@@ -22,8 +22,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _GRALLOC_GBM_HANDLE_H_
-#define _GRALLOC_GBM_HANDLE_H_
+#ifndef _GRALLOC_DRM_HANDLE_H_
+#define _GRALLOC_DRM_HANDLE_H_
 
 #include <cutils/log.h>
 #include <cutils/native_handle.h>
@@ -56,6 +56,21 @@ struct gralloc_drm_handle_t {
 		uint64_t reserved;
 	} __attribute__((aligned(8)));
 };
+
+struct gralloc_gbm_bo_t {
+	struct gbm_bo *bo;
+	void *map_data;
+
+	struct gralloc_gbm_handle_t *handle;
+
+	int imported;  /* the handle is from a remote proces when true */
+
+	int lock_count;
+	int locked_for;
+
+	unsigned int refcount;
+};
+
 #define GRALLOC_GBM_HANDLE_MAGIC 0x5f47424d
 #define GRALLOC_GBM_HANDLE_NUM_FDS 1
 #define GRALLOC_GBM_HANDLE_NUM_INTS (						\
@@ -89,4 +104,4 @@ static inline int gralloc_drm_get_prime_fd(buffer_handle_t _handle)
 #ifdef __cplusplus
 }
 #endif
-#endif /* _GRALLOC_GBM_HANDLE_H_ */
+#endif /* _GRALLOC_DRM_HANDLE_H_ */

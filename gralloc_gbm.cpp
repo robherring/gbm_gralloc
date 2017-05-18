@@ -46,20 +46,6 @@
 
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-struct gralloc_gbm_bo_t {
-	struct gbm_bo *bo;
-	void *map_data;
-
-	struct gralloc_gbm_handle_t *handle;
-
-	int imported;  /* the handle is from a remote proces when true */
-
-	int lock_count;
-	int locked_for;
-
-	unsigned int refcount;
-};
-
 static int32_t gralloc_gbm_pid = 0;
 
 static uint32_t get_gbm_format(int format)
