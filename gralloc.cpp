@@ -110,7 +110,7 @@ static int gbm_mod_perform(const struct gralloc_module_t *mod, int op, ...)
 	case GRALLOC_MODULE_PERFORM_GET_DRM_FD:
 		{
 			int *fd = va_arg(args, int *);
-			*fd = gbm_device_get_fd(dmod->gbm);
+			*fd = dup(gbm_device_get_fd(dmod->gbm));
 			err = 0;
 		}
 		break;
