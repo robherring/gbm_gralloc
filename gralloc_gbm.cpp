@@ -69,46 +69,11 @@ static struct bo_data_t *gbm_bo_data(struct gbm_bo *bo) {
 	return (struct bo_data_t *)gbm_bo_get_user_data(bo);
 }
 
-
-static uint32_t get_gbm_format(int format)
-{
-	uint32_t fmt;
-
-	switch (format) {
-	case HAL_PIXEL_FORMAT_RGBA_8888:
-		fmt = GBM_FORMAT_ABGR8888;
-		break;
-	case HAL_PIXEL_FORMAT_RGBX_8888:
-		fmt = GBM_FORMAT_XBGR8888;
-		break;
-	case HAL_PIXEL_FORMAT_RGB_888:
-		fmt = GBM_FORMAT_RGB888;
-		break;
-	case HAL_PIXEL_FORMAT_RGB_565:
-		fmt = GBM_FORMAT_RGB565;
-		break;
-	case HAL_PIXEL_FORMAT_BGRA_8888:
-		fmt = GBM_FORMAT_ARGB8888;
-		break;
-	case HAL_PIXEL_FORMAT_YV12:
-		/* YV12 is planar, but must be a single buffer so ask for GR88 */
-		fmt = GBM_FORMAT_GR88;
-		break;
-	case HAL_PIXEL_FORMAT_YCbCr_422_SP:
-	case HAL_PIXEL_FORMAT_YCrCb_420_SP:
-	default:
-		fmt = 0;
-		break;
-	}
-
-	return fmt;
-}
-
-static int gralloc_gbm_get_bpp(int format)
+static int gralloc_gbm_get_bpp(int hal_format)
 {
 	int bpp;
 
-	switch (format) {
+	switch (hal_format) {
 	case HAL_PIXEL_FORMAT_RGBA_8888:
 	case HAL_PIXEL_FORMAT_RGBX_8888:
 	case HAL_PIXEL_FORMAT_BGRA_8888:
@@ -162,19 +127,23 @@ static struct gbm_bo *gbm_import(struct gbm_device *gbm,
 	struct gbm_import_fd_data data;
 	#endif
 
-	int format = get_gbm_format(handle->format);
+	int format = gralloc_handle_get_fourcc_format(&handle->base);
+
 	if (handle->prime_fd < 0)
 		return NULL;
 
 	memset(&data, 0, sizeof(data));
 	data.width = handle->width;
 	data.height = handle->height;
-	data.format = format;
-	/* Adjust the width and height for a GBM GR88 buffer */
-	if (handle->format == HAL_PIXEL_FORMAT_YV12) {
+	/* Adjust the width and height for a GBM YV12 buffer */
+	if (format == GBM_FORMAT_YVU420) {
+		/* YV12 is planar, but must be a single buffer so ask for GR88 */
+		format = GBM_FORMAT_GR88;
+
 		data.width /= 2;
 		data.height += handle->height / 2;
 	}
+	data.format = format;
 
 	#ifdef GBM_BO_IMPORT_FD_MODIFIER
 	data.num_fds = 1;
@@ -196,7 +165,7 @@ static struct gbm_bo *gbm_alloc(struct gbm_device *gbm,
 {
 	struct gbm_bo *bo;
 	struct gralloc_handle_t *handle = gralloc_handle(_handle);
-	int format = get_gbm_format(handle->format);
+	int format = gralloc_handle_get_fourcc_format(_handle);
 	int usage = get_pipe_bind(handle->usage);
 	int width, height;
 
@@ -213,17 +182,19 @@ static struct gbm_bo *gbm_alloc(struct gbm_device *gbm,
 	 * For YV12, we request GR88, so halve the width since we're getting
 	 * 16bpp. Then increase the height by 1.5 for the U and V planes.
 	 */
-	if (handle->format == HAL_PIXEL_FORMAT_YV12) {
+	if (format == GBM_FORMAT_YVU420) {
+		format = GBM_FORMAT_GR88;
+
 		width /= 2;
 		height += handle->height / 2;
 	}
 
 	ALOGV("create BO, size=%dx%d, fmt=%d, usage=%x",
-	      handle->width, handle->height, handle->format, usage);
+	      handle->width, handle->height, format, usage);
 	bo = gbm_bo_create(gbm, width, height, format, usage);
 	if (!bo) {
 		ALOGE("failed to create BO, size=%dx%d, fmt=%d, usage=%x",
-		      handle->width, handle->height, handle->format, usage);
+		      handle->width, handle->height, format, usage);
 		return NULL;
 	}
 
@@ -260,7 +231,6 @@ static int gbm_map(buffer_handle_t handle, int x, int y, int w, int h,
 {
 	int err = 0;
 	int flags = GBM_BO_TRANSFER_READ;
-	struct gralloc_gbm_handle_t *gbm_handle = gralloc_handle(handle);
 	struct gbm_bo *bo = gralloc_gbm_bo_from_handle(handle);
 	struct bo_data_t *bo_data = gbm_bo_data(bo);
 	uint32_t stride;
@@ -268,7 +238,7 @@ static int gbm_map(buffer_handle_t handle, int x, int y, int w, int h,
 	if (bo_data->map_data)
 		return -EINVAL;
 
-	if (gbm_handle->format == HAL_PIXEL_FORMAT_YV12) {
+	if (gralloc_handle_get_fourcc_format(handle) == GBM_FORMAT_YVU420) {
 		if (x || y)
 			ALOGE("can't map with offset for planar %p", bo);
 		w /= 2;
@@ -362,12 +332,12 @@ int gralloc_gbm_handle_unregister(buffer_handle_t handle)
  * Create a bo.
  */
 buffer_handle_t gralloc_gbm_bo_create(struct gbm_device *gbm,
-		int width, int height, int format, int usage, int *stride)
+		int width, int height, int hal_format, int usage, int *stride)
 {
 	struct gbm_bo *bo;
 	native_handle_t *handle;
 
-	handle = gralloc_handle_create(width, height, format, usage);
+	handle = gralloc_handle_create(width, height, hal_format, usage);
 	if (!handle)
 		return NULL;
 
@@ -380,7 +350,7 @@ buffer_handle_t gralloc_gbm_bo_create(struct gbm_device *gbm,
 	gbm_bo_handle_map.emplace(handle, bo);
 
 	/* in pixels */
-	*stride = gralloc_handle_get_stride(handle, 0) / gralloc_gbm_get_bpp(format);
+	*stride = gralloc_handle_get_stride(handle, 0) / gralloc_gbm_get_bpp(hal_format);
 
 	return handle;
 }

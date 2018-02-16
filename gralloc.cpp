@@ -175,7 +175,7 @@ static int gbm_mod_free_gpu0(alloc_device_t *dev, buffer_handle_t handle)
 }
 
 static int gbm_mod_alloc_gpu0(alloc_device_t *dev,
-		int w, int h, int format, int usage,
+		int w, int h, int hal_format, int usage,
 		buffer_handle_t *handle, int *stride)
 {
 	struct gbm_module_t *dmod = (struct gbm_module_t *) dev->common.module;
@@ -183,7 +183,7 @@ static int gbm_mod_alloc_gpu0(alloc_device_t *dev,
 
 	pthread_mutex_lock(&dmod->mutex);
 
-	*handle = gralloc_gbm_bo_create(dmod->gbm, w, h, format, usage, stride);
+	*handle = gralloc_gbm_bo_create(dmod->gbm, w, h, hal_format, usage, stride);
 	if (!*handle)
 		err = -errno;
 
