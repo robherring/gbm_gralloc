@@ -217,7 +217,7 @@ static int gbm_mod_alloc_gpu0(alloc_device_t *dev,
 		buffer_handle_t *handle, int *stride)
 {
 	struct gbm_module_t *dmod = (struct gbm_module_t *) dev->common.module;
-	struct gralloc_gbm_handle_t *gbm_handle;
+	struct gralloc_handle_t *gbm_handle;
 	int err = 0;
 
 	pthread_mutex_lock(&dmod->mutex);

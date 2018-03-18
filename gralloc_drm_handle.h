@@ -33,57 +33,11 @@
 extern "C" {
 #endif
 
-struct gralloc_drm_handle_t {
-	native_handle_t base;
-
-	/* file descriptors */
-	int prime_fd;
-
-	/* integers */
-	int magic;
-
-	int width;
-	int height;
-	int format;
-	int usage;
-
-	int name;   /* the name of the bo */
-	int stride; /* the stride in bytes */
-	int data_owner; /* owner of data (for validation) */
-
-	uint64_t modifier __attribute__((aligned(8))); /* buffer modifiers */
-	union {
-		void *data; /* pointer to struct gralloc_gbm_bo_t */
-		uint64_t reserved;
-	} __attribute__((aligned(8)));
-};
-#define GRALLOC_GBM_HANDLE_MAGIC 0x5f47424d
-#define GRALLOC_GBM_HANDLE_NUM_FDS 1
-#define GRALLOC_GBM_HANDLE_NUM_INTS (						\
-	((sizeof(struct gralloc_drm_handle_t) - sizeof(native_handle_t))/sizeof(int))	\
-	 - GRALLOC_GBM_HANDLE_NUM_FDS)
-
-static inline struct gralloc_drm_handle_t *gralloc_drm_handle(buffer_handle_t _handle)
-{
-	struct gralloc_drm_handle_t *handle =
-		(struct gralloc_drm_handle_t *) _handle;
-
-	if (handle && (handle->base.version != sizeof(handle->base) ||
-	               handle->base.numInts != GRALLOC_GBM_HANDLE_NUM_INTS ||
-	               handle->base.numFds != GRALLOC_GBM_HANDLE_NUM_FDS ||
-	               handle->magic != GRALLOC_GBM_HANDLE_MAGIC)) {
-		ALOGE("invalid handle: version=%d, numInts=%d, numFds=%d, magic=%x",
-			handle->base.version, handle->base.numInts,
-			handle->base.numFds, handle->magic);
-		handle = NULL;
-	}
-
-	return handle;
-}
+#include <gralloc_handle.h>
 
 static inline int gralloc_drm_get_prime_fd(buffer_handle_t _handle)
 {
-	struct gralloc_drm_handle_t *handle = gralloc_drm_handle(_handle);
+	struct gralloc_handle_t *handle = gralloc_handle(_handle);
 	return (handle) ? handle->prime_fd : -1;
 }
 
