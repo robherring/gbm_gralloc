@@ -37,11 +37,11 @@
 
 #include <hardware/gralloc.h>
 #include <system/graphics.h>
+#include <gralloc_handle.h>
 
 #include <gbm.h>
 
 #include "gralloc_gbm_priv.h"
-#include "gralloc_drm_handle.h"
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
