@@ -33,12 +33,11 @@
 
 #include <hardware/gralloc.h>
 #include <system/graphics.h>
+#include <gralloc_handle.h>
 
 #include <gbm.h>
 
-#include "gralloc_drm.h"
 #include "gralloc_gbm_priv.h"
-#include "gralloc_drm_handle.h"
 
 struct gbm_module_t {
 	gralloc_module_t base;
@@ -92,41 +91,6 @@ static int gbm_init(struct gbm_module_t *dmod)
 			err = -EINVAL;
 	}
 	pthread_mutex_unlock(&dmod->mutex);
-
-	return err;
-}
-
-static int gbm_mod_perform(const struct gralloc_module_t *mod, int op, ...)
-{
-	struct gbm_module_t *dmod = (struct gbm_module_t *) mod;
-	va_list args;
-	int err;
-	uint32_t uop = static_cast<uint32_t>(op);
-
-	err = gbm_init(dmod);
-	if (err)
-		return err;
-
-	va_start(args, op);
-	switch (uop) {
-	case GRALLOC_MODULE_PERFORM_GET_DRM_FD:
-		{
-			int *fd = va_arg(args, int *);
-			*fd = gbm_device_get_fd(dmod->gbm);
-			err = 0;
-		}
-		break;
-	/* TODO: This is a stub and should be implemented fully */
-	case GRALLOC_MODULE_PERFORM_GET_USAGE:
-		{
-			err = 0;
-		}
-		break;
-	default:
-		err = -EINVAL;
-		break;
-	}
-	va_end(args);
 
 	return err;
 }
@@ -217,7 +181,7 @@ static int gbm_mod_alloc_gpu0(alloc_device_t *dev,
 		buffer_handle_t *handle, int *stride)
 {
 	struct gbm_module_t *dmod = (struct gbm_module_t *) dev->common.module;
-	struct gralloc_gbm_handle_t *gbm_handle;
+	struct gralloc_handle_t *gbm_handle;
 	int err = 0;
 
 	pthread_mutex_lock(&dmod->mutex);
@@ -297,7 +261,6 @@ struct gbm_module_t HAL_MODULE_INFO_SYM = {
 		.unregisterBuffer = gbm_mod_unregister_buffer,
 		.lock = gbm_mod_lock,
 		.unlock = gbm_mod_unlock,
-		.perform = gbm_mod_perform
 	},
 
 	.mutex = PTHREAD_MUTEX_INITIALIZER,

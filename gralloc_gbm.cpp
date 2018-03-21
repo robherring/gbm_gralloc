@@ -37,11 +37,11 @@
 
 #include <hardware/gralloc.h>
 #include <system/graphics.h>
+#include <gralloc_handle.h>
 
 #include <gbm.h>
 
 #include "gralloc_gbm_priv.h"
-#include "gralloc_drm_handle.h"
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
@@ -117,7 +117,7 @@ static unsigned int get_pipe_bind(int usage)
 }
 
 static struct gbm_bo *gbm_import(struct gbm_device *gbm,
-		struct gralloc_gbm_handle_t *handle)
+		struct gralloc_handle_t *handle)
 {
 	struct gbm_bo *bo;
 	#ifdef GBM_BO_IMPORT_FD_MODIFIER
@@ -156,7 +156,7 @@ static struct gbm_bo *gbm_import(struct gbm_device *gbm,
 }
 
 static struct gbm_bo *gbm_alloc(struct gbm_device *gbm,
-		struct gralloc_gbm_handle_t *handle)
+		struct gralloc_handle_t *handle)
 {
 	struct gbm_bo *bo;
 	int format = get_gbm_format(handle->format);
@@ -215,7 +215,7 @@ void gbm_free(buffer_handle_t handle)
 struct gbm_bo *gralloc_gbm_bo_from_handle(buffer_handle_t handle)
 {
 	int pid = getpid();
-	struct gralloc_gbm_handle_t *gbm_handle = gralloc_gbm_handle(handle);
+	struct gralloc_handle_t *gbm_handle = gralloc_handle(handle);
 
 	if (!gbm_handle)
 		return NULL;
@@ -233,7 +233,7 @@ static int gbm_map(buffer_handle_t handle, int x, int y, int w, int h,
 {
 	int err = 0;
 	int flags = GBM_BO_TRANSFER_READ;
-	struct gralloc_gbm_handle_t *gbm_handle = gralloc_gbm_handle(handle);
+	struct gralloc_handle_t *gbm_handle = gralloc_handle(handle);
 	struct gbm_bo *bo = gralloc_gbm_bo_from_handle(handle);
 	struct bo_data_t *bo_data = gbm_bo_data(bo);
 	uint32_t stride;
@@ -305,7 +305,7 @@ struct gbm_device *gbm_dev_create(void)
 int gralloc_gbm_handle_register(buffer_handle_t _handle, struct gbm_device *gbm)
 {
 	struct gbm_bo *bo;
-	struct gralloc_gbm_handle_t *handle = gralloc_gbm_handle(_handle);
+	struct gralloc_handle_t *handle = gralloc_handle(_handle);
 
 	if (!handle)
 		return -EINVAL;
@@ -325,7 +325,7 @@ int gralloc_gbm_handle_register(buffer_handle_t _handle, struct gbm_device *gbm)
  */
 int gralloc_gbm_handle_unregister(buffer_handle_t handle)
 {
-	struct gralloc_gbm_handle_t *gbm_handle = gralloc_gbm_handle(handle);
+	struct gralloc_handle_t *gbm_handle = gralloc_handle(handle);
 
 	gbm_free(handle);
 	gbm_handle->data_owner = 0;
@@ -335,37 +335,15 @@ int gralloc_gbm_handle_unregister(buffer_handle_t handle)
 }
 
 /*
- * Create a buffer handle.
- */
-static struct gralloc_gbm_handle_t *create_bo_handle(int width,
-		int height, int format, int usage)
-{
-	struct gralloc_gbm_handle_t *handle;
-
-	handle = (gralloc_gbm_handle_t *)native_handle_create(GRALLOC_GBM_HANDLE_NUM_FDS, GRALLOC_GBM_HANDLE_NUM_INTS);
-	if (!handle)
-		return NULL;
-
-	handle->magic = GRALLOC_GBM_HANDLE_MAGIC;
-	handle->width = width;
-	handle->height = height;
-	handle->format = format;
-	handle->usage = usage;
-	handle->prime_fd = -1;
-
-	return handle;
-}
-
-/*
  * Create a bo.
  */
-struct gralloc_gbm_handle_t *gralloc_gbm_bo_create(struct gbm_device *gbm,
+struct gralloc_handle_t *gralloc_gbm_bo_create(struct gbm_device *gbm,
 		int width, int height, int format, int usage)
 {
 	struct gbm_bo *bo;
-	struct gralloc_gbm_handle_t *handle;
+	struct gralloc_handle_t *handle;
 
-	handle = create_bo_handle(width, height, format, usage);
+	handle = gralloc_handle_create(width, height, format, usage);
 	if (!handle)
 		return NULL;
 
@@ -388,7 +366,7 @@ int gralloc_gbm_bo_lock(buffer_handle_t handle,
 		int usage, int x, int y, int w, int h,
 		void **addr)
 {
-	struct gralloc_gbm_handle_t *gbm_handle = gralloc_gbm_handle(handle);
+	struct gralloc_handle_t *gbm_handle = gralloc_handle(handle);
 	struct gbm_bo *bo = gralloc_gbm_bo_from_handle(handle);
 	struct bo_data_t *bo_data;
 
