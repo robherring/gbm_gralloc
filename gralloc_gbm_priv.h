@@ -48,6 +48,9 @@ int gralloc_gbm_bo_unlock(buffer_handle_t handle);
 int gralloc_gbm_bo_lock_ycbcr(buffer_handle_t handle, int usage,
 		int x, int y, int w, int h, struct android_ycbcr *ycbcr);
 
+int32_t gbm_validate_buffer_size(buffer_handle_t handle, uint32_t w, uint32_t h, int32_t format,
+		int usage, uint32_t stride);
+
 struct gbm_device *gbm_dev_create(void);
 void gbm_dev_destroy(struct gbm_device *gbm);
 
