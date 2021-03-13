@@ -163,6 +163,19 @@ static int gbm_mod_lock_ycbcr(gralloc_module_t const *mod, buffer_handle_t handl
 	return err;
 }
 
+static int32_t gbm_mod_validate_buffer_size(const gralloc_module_t *mod,
+		buffer_handle_t handle, uint32_t w, uint32_t h, int32_t format, int usage, uint32_t stride)
+{
+	struct gbm_module_t *dmod = (struct gbm_module_t *) mod;
+	int err;
+
+	pthread_mutex_lock(&dmod->mutex);
+	err = gbm_validate_buffer_size(handle, w, h, format, usage, stride);
+	pthread_mutex_unlock(&dmod->mutex);
+
+	return err;
+}
+
 static int gbm_mod_close_gpu0(struct hw_device_t *dev)
 {
 	struct gbm_module_t *dmod = (struct gbm_module_t *)dev->module;
@@ -265,7 +278,8 @@ struct gbm_module_t HAL_MODULE_INFO_SYM = {
 		.lock = gbm_mod_lock,
 		.unlock = gbm_mod_unlock,
 		.lock_ycbcr = gbm_mod_lock_ycbcr,
-		.perform = gbm_mod_perform
+		.perform = gbm_mod_perform,
+		.validateBufferSize = gbm_mod_validate_buffer_size
 	},
 
 	.mutex = PTHREAD_MUTEX_INITIALIZER,
