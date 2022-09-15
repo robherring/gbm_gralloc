@@ -522,3 +522,48 @@ int gralloc_gbm_bo_lock_ycbcr(buffer_handle_t handle,
 
 	return 0;
 }
+
+/*
+ * Validate that the buffer can be safely accessed by a caller who assumes
+ * the specified width, height, format, usage, and stride.
+ */
+int32_t gbm_validate_buffer_size(buffer_handle_t handle, uint32_t w, uint32_t h, int32_t format,
+		int usage, uint32_t stride)
+{
+	struct gralloc_handle_t *gbm_handle = gralloc_handle(handle);
+
+	if (!gbm_handle) {
+		ALOGE("buffer validation unsuccess, bad handle: %p", gbm_handle);
+		return -EINVAL;
+	}
+
+	if (w != gbm_handle->width) {
+		ALOGE("buffer validation unsuccess, specified width %d requires %d", w, gbm_handle->width);
+		return -ENOMEM;
+	}
+
+	if (h != gbm_handle->height) {
+		ALOGE("buffer validation unsuccess, specified height %d requires %d", h, gbm_handle->height);
+		return -ENOMEM;
+	}
+
+	if (format != gbm_handle->format) {
+		ALOGE("buffer validation unsuccess, specified format 0x%x requires 0x%x", format,
+				gbm_handle->format);
+		return -ENOMEM;
+	}
+
+	if (usage != gbm_handle->usage) {
+		ALOGE("buffer validation unsuccess, specified usage 0x%x requires 0x%x", usage,
+				gbm_handle->usage);
+		return -ENOMEM;
+	}
+
+	if (stride * gralloc_gbm_get_bpp(format) != gbm_handle->stride) {
+		ALOGE("buffer validation unsuccess, specified stride %d requires %d",
+				stride * gralloc_gbm_get_bpp(format), gbm_handle->stride);
+		return -ENOMEM;
+	}
+
+	return 0;
+}
