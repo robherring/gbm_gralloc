@@ -372,6 +372,11 @@ buffer_handle_t gralloc_gbm_bo_create(struct gbm_device *gbm,
 	struct gbm_bo *bo;
 	native_handle_t *handle;
 
+	if (gralloc_gbm_get_bpp(format) == 0) {
+		ALOGE("Failed to create gbm bo due to unsupported HAL pixel format: 0x%x", format);
+		return NULL;
+	}
+
 	handle = gralloc_handle_create(width, height, format, usage);
 	if (!handle)
 		return NULL;
